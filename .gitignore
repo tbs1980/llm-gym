@@ -171,3 +171,4 @@ cython_debug/
 .pypirc
 
 langchain/langchain-env/
+foundations/2012_alexnet/alexnet-env/
