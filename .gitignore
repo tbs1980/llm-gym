@@ -172,3 +172,4 @@ cython_debug/
 
 langchain/langchain-env/
 foundations/2012_alexnet/alexnet-env/
+foundations/2012_alexnet/runs/
