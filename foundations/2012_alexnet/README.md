@@ -16,13 +16,16 @@ Neural Networks](https://proceedings.neurips.cc/paper/2012/file/c399862d3b9d6b76
 9. https://www.pinecone.io/learn/series/image-search/imagenet/
 10. https://medium.com/@karandeepdps/alexnet-vggnet-resnet-and-inception-11880a1ed3cd
 11. https://image-net.org/index.php
+12. https://github.com/vdumoulin/conv_arithmetic
+13. https://maximliu-85602.medium.com/learn-cnn-and-pytorch-through-understanding-torch-nn-conv2d-class-54ad94bcc7d0
+14. https://cs231n.github.io/convolutional-networks/
 
 # Env setup
 
 ```bash
 python3 -m venv alexnet-env
 source alexnet-env/bin/activate
-pip3 install notebook install torch torchvision torchaudio
+pip3 install notebook torch torchvision torchaudio scipy matplotlib
 ```
 
 # Data
