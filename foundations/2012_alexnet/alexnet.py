@@ -271,7 +271,7 @@ if __name__ == "__main__":
     ])
 
     BATCH_SIZE = 128
-    DATA_ROOT = '/mnt/data/ILSVRC2012'
+    DATA_ROOT = '/home/sree/data/ILSVRC2012'
     trainset = torchvision.datasets.ImageNet(
         root=DATA_ROOT,
         split='train',
@@ -380,10 +380,10 @@ if __name__ == "__main__":
             torch.save(state, checkpoint_path)
 
         epoch_end_time = timer()
-        epoch_elpsed_time = epoch_start_time - epoch_end_time
+        epoch_elpsed_time = epoch_end_time - epoch_start_time
         print(f"Time for one epoch = {epoch_elpsed_time}") # time in seconds
-        break
+        # break
 
     training_end_time = timer()
-    training_elapsed_time = training_start_time - training_end_time
+    training_elapsed_time = training_end_time - training_start_time
     print(f"Time for training = {training_elapsed_time}") # time in seconds
