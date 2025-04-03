@@ -25,7 +25,7 @@ Neural Networks](https://proceedings.neurips.cc/paper/2012/file/c399862d3b9d6b76
 ```bash
 python3 -m venv alexnet-env
 source alexnet-env/bin/activate
-pip3 install notebook torch torchvision torchaudio scipy matplotlib tqdm
+pip3 install notebook torch torchvision torchaudio scipy matplotlib tqdm tensorboard
 ```
 
 # Data
