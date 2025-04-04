@@ -382,10 +382,10 @@ if __name__ == "__main__":
             torch.save(state, checkpoint_path)
 
         epoch_end_time = timer()
-        epoch_elpsed_time = epoch_end_time - epoch_start_time
-        print(f"Time for epoch {epoch} = {epoch_elpsed_time}") # time in seconds
+        epoch_elpsed_time = (epoch_end_time - epoch_start_time) / 60
+        print(f"Time for epoch {epoch} = {epoch_elpsed_time}") # time in minutes
         # break
 
     training_end_time = timer()
-    training_elapsed_time = training_end_time - training_start_time
-    print(f"Time for training = {training_elapsed_time}") # time in seconds
+    training_elapsed_time = (training_end_time - training_start_time) / 60
+    print(f"Time for training = {training_elapsed_time}") # time in minutes
