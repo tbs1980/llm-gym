@@ -368,6 +368,8 @@ if __name__ == "__main__":
 
         # Track best performance and save model
         if avg_val_loss < best_vloss:
+            best_vloss = avg_val_loss
+
             # save checkpoints
             print(f"Saving check point as avg_val_loss({avg_val_loss}) < best_vloss({best_vloss})")
             checkpoint_path = os.path.join(CHECKPOINT_DIR, 'alexnet_states_e{}.pkl'.format(epoch + 1))
@@ -381,7 +383,7 @@ if __name__ == "__main__":
 
         epoch_end_time = timer()
         epoch_elpsed_time = epoch_end_time - epoch_start_time
-        print(f"Time for one epoch = {epoch_elpsed_time}") # time in seconds
+        print(f"Time for epoch {epoch} = {epoch_elpsed_time}") # time in seconds
         # break
 
     training_end_time = timer()
