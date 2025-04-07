@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import torch
 import torch.nn as nn
 import torchvision
@@ -137,7 +138,7 @@ def train_one_epoch(
             writer.add_scalar('Top-1 error/train_step', avg_top1_error, tb_x)
             writer.add_scalar('Top-5 error/train_step', avg_top5_error, tb_x)
 
-            # print(f'  Batch {tb_x} Loss: {avg_running_loss:.4f} Top-1 error rate: {avg_top1_error:.2f}% Top-5 error rate: {avg_top5_error:.2f}%')
+            print(f'  Batch {tb_x} Loss: {avg_running_loss:.4f} Top-1 error rate: {avg_top1_error:.2f}% Top-5 error rate: {avg_top5_error:.2f}%')
             
             running_loss = 0.0
             running_top1_error = 0.0
@@ -236,6 +237,15 @@ def validate_one_epoch(
     
     return avg_epoch_loss, avg_top1_error, avg_top5_error
 
+# transpose is use to meet the shape of the tensor C x H x W rather than H x W x C
+mean_pixels = np.float32(np.load('/home/sree/github/llm-gym/foundations/2012_alexnet/mean_pixels.npy').transpose(2, 0, 1))
+
+def meanSubstraction(x):
+    return x - mean_pixels
+
+def toTensorNoScaling(x):
+    return torch.from_numpy(np.array(x).transpose(2, 0, 1))
+
 if __name__ == "__main__":
     OUTPUT_DIR = 'alexnet_data_out'
 
@@ -265,9 +275,10 @@ if __name__ == "__main__":
     IMAGE_DIM = 227  # pixels
     preprocess = transforms.Compose([
         transforms.Resize(256),
+        transforms.CenterCrop(256),
+        transforms.Lambda(toTensorNoScaling),
+        transforms.Lambda(meanSubstraction),
         transforms.CenterCrop(IMAGE_DIM),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
 
     BATCH_SIZE = 128
@@ -285,7 +296,7 @@ if __name__ == "__main__":
         pin_memory=False,
         num_workers=4,
         drop_last=True,
-        batch_size=BATCH_SIZE,
+        batch_size=256,
         # prefetch_factor=8,
         persistent_workers=True,
     )
@@ -322,7 +333,7 @@ if __name__ == "__main__":
     print("Loss function created")
 
     print('Starting training...')
-    NUM_EPOCHS = 120
+    NUM_EPOCHS = 10
     best_vloss = 1000000.0
     training_start_time = timer()
     for epoch in range(NUM_EPOCHS):
