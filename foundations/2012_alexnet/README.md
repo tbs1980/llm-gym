@@ -14,12 +14,16 @@ Neural Networks](https://proceedings.neurips.cc/paper/2012/file/c399862d3b9d6b76
 7. https://danielparicio.com/posts/understanding-alexnet/
 8. https://danielparicio.com/posts/implementing-alexnet/
 9. https://github.com/danipari/CNN-Training-From-Scratch/blob/master/training_alexnet.ipynb
-10. https://www.pinecone.io/learn/series/image-search/imagenet/
-11. https://medium.com/@karandeepdps/alexnet-vggnet-resnet-and-inception-11880a1ed3cd
-12. https://image-net.org/index.php
-13. https://github.com/vdumoulin/conv_arithmetic
-14. https://maximliu-85602.medium.com/learn-cnn-and-pytorch-through-understanding-torch-nn-conv2d-class-54ad94bcc7d0
-15. https://cs231n.github.io/convolutional-networks/
+10. https://github.com/pytorch/vision/tree/main/references/classification
+11. https://www.pinecone.io/learn/series/image-search/imagenet/
+12. https://medium.com/@karandeepdps/alexnet-vggnet-resnet-and-inception-11880a1ed3cd
+13. https://image-net.org/index.php
+14. https://github.com/vdumoulin/conv_arithmetic
+15. https://maximliu-85602.medium.com/learn-cnn-and-pytorch-through-understanding-torch-nn-conv2d-class-54ad94bcc7d0
+16. https://cs231n.github.io/convolutional-networks/
+17. https://caffe.berkeleyvision.org/gathered/examples/imagenet.html
+18. https://code.google.com/archive/p/cuda-convnet/wikis/Data.wiki
+19. https://github.com/pytorch/vision/tree/main/references/classification
 
 # Env setup
 
