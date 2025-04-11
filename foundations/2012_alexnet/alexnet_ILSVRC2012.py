@@ -131,7 +131,7 @@ def get_train_data_loader(train_dataset_path: str) -> torch.utils.data.DataLoade
     train_loader = torch.utils.data.DataLoader(
         trainset,
         shuffle=False,
-        num_workers=1,
+        num_workers=4,
         drop_last=True,
         batch_size=256,
         persistent_workers=True,
@@ -150,16 +150,18 @@ if __name__ == "__main__":
         mean_pixels = compute_mean_pixels(train_dataset_path)
 
         # assign the global variable defined at the top
-        mean_activity_of_pixels = mean_pixels.numpy()
-        np.save("mean_activity_of_pixels.npy", mean_activity_of_pixels)
+        mean_activity_of_pixels = mean_pixels
+        np.save("mean_activity_of_pixels.npy", mean_activity_of_pixels.numpy())
     else:
-        mean_activity_of_pixels = np.float32(np.load('/home/sree/github/llm-gym/foundations/2012_alexnet/mean_activity_of_pixels.npy'))
+        mean_activity_of_pixels = torch.Tensor(
+            np.float32(np.load('/home/sree/github/llm-gym/foundations/2012_alexnet/mean_activity_of_pixels.npy'))
+        )
         logging.debug(f"Shape of the mean activity of pixels loaded is {mean_activity_of_pixels.shape}")
 
     train_data_loader = get_train_data_loader(train_dataset_path)
 
     dataiter = iter(train_data_loader)
-    images, labels = next(train_data_loader)
+    images, labels = next(dataiter)
 
 
     
