@@ -2,6 +2,8 @@ import logging
 
 import numpy as np
 import torch
+import torch.nn as nn
+import torch.optim as optim
 import torchvision
 import torchvision.transforms as transforms
 from tqdm import tqdm
@@ -9,14 +11,61 @@ from tqdm import tqdm
 mean_activity_of_pixels = None
 
 
-def SubtractMeanPixelActivity(x: np.array):
+class AlexNet(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+        self.model = nn.Sequential(
+            nn.Conv2d(in_channels=3, out_channels=96, kernel_size=11, stride=4),
+            nn.ReLU(),
+            nn.LocalResponseNorm(size=5, alpha=0.0001, beta=0.75, k=2),
+            nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.Conv2d(in_channels=96, out_channels=256, kernel_size=5, padding=2),
+            nn.ReLU(),
+            nn.LocalResponseNorm(size=5, alpha=0.0001, beta=0.75, k=2),
+            nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.Conv2d(in_channels=256, out_channels=384, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(in_channels=384, out_channels=384, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(in_channels=384, out_channels=256, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=3, stride=2),
+        )
+
+        self.classifier = nn.Sequential(
+            nn.Dropout(p=0.5),
+            nn.Linear(in_features=256 * 6 * 6, out_features=4096),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(in_features=4096, out_features=4096),
+            nn.ReLU(),
+            nn.Linear(in_features=4096, out_features=1000),
+        )
+        self.init_weights_and_biases()
+
+    def init_weights_and_biases(self):
+        logging.debug("Initialising weights and biases...")
+
+        for layer in self.model:
+            if isinstance(layer, nn.Conv2d):
+                nn.init.normal_(layer.weight, mean=0, std=0.01)
+                nn.init.constant_(layer.bias, 0)
+        # original paper = 1 for Conv2d layers 2nd, 4th, and 5th conv layers
+        nn.init.constant_(self.model[4].bias, 1)
+        nn.init.constant_(self.model[10].bias, 1)
+        nn.init.constant_(self.model[12].bias, 1)
+
+
+def SubtractMeanPixelActivity(x: torch.Tensor):
     """
     A method that subracts precomputed mean activity of pixels from each pixel.
     The mean activity of pixels are computed using the entire training set.
 
     Parameters
     ----------
-
+    x: torch.Tensor
+        An input image as torch tensor in C x H x W shape.
     """
     return x - mean_activity_of_pixels
 
@@ -188,6 +237,7 @@ def get_valid_data_loader(valid_dataset_path: str) -> torch.utils.data.DataLoade
 
 
 if __name__ == "__main__":
+    logging.basicConfig(filename="myapp.log", level=logging.INFO)
 
     dataset_path = "/home/sree/data/ILSVRC2012"
     compute_mean_activity = False
@@ -213,5 +263,19 @@ if __name__ == "__main__":
     train_data_loader = get_train_data_loader(dataset_path)
     valid_data_loader = get_valid_data_loader(dataset_path)
 
-    dataiter = iter(valid_data_loader)
-    images, labels = next(dataiter)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    logging.debug(
+        f"Using device = {device}",
+    )
+
+    alexnet = AlexNet().to(device)
+    logging.debug("AlexNet initiated")
+
+    optimizer = optim.Adam(params=alexnet.parameters(), lr=0.0001)
+    logging.debug("Optimizer initiated")
+
+    lr_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
+    logging.debug("Learning rate scheduler initiated")
+
+    loss = torch.nn.CrossEntropyLoss()
+    logging.debug("Cross entropy loss function created")
