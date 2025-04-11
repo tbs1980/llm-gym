@@ -6,8 +6,8 @@ import torchvision
 import torchvision.transforms as transforms
 from tqdm import tqdm
 
-
 mean_activity_of_pixels = None
+
 
 def SubtractMeanPixelActivity(x: np.array):
     """
@@ -19,6 +19,7 @@ def SubtractMeanPixelActivity(x: np.array):
 
     """
     return x - mean_activity_of_pixels
+
 
 def ToTensorNoScaling(x: np.array) -> torch.Tensor:
     """
@@ -77,7 +78,7 @@ def compute_mean_pixels(train_dataset_path: str) -> np.array:
 
     train_data_loader = torch.utils.data.DataLoader(
         trainset,
-        shuffle=False,
+        shuffle=True,
         num_workers=4,
         drop_last=True,
         batch_size=256,
@@ -103,6 +104,7 @@ def get_train_data_loader(train_dataset_path: str) -> torch.utils.data.DataLoade
         1. Resize the image to 256 pixels
         2. CenterCrop to 227 x 227 pixels
         3. Covert to torch.Tensor with shape C x H x W shape
+        4. Subtract the mean activity of pixels from each pixels for each channel
 
     Parameters
     ----------
@@ -119,7 +121,6 @@ def get_train_data_loader(train_dataset_path: str) -> torch.utils.data.DataLoade
             transforms.CenterCrop(227),
             transforms.Lambda(ToTensorNoScaling),
             transforms.Lambda(SubtractMeanPixelActivity),
-            transforms.CenterCrop(227),
         ]
     )
 
@@ -133,7 +134,7 @@ def get_train_data_loader(train_dataset_path: str) -> torch.utils.data.DataLoade
         shuffle=False,
         num_workers=4,
         drop_last=True,
-        batch_size=256,
+        batch_size=128,
         persistent_workers=True,
     )
     logging.debug("Train Dataloader created")
@@ -141,27 +142,76 @@ def get_train_data_loader(train_dataset_path: str) -> torch.utils.data.DataLoade
     return train_loader
 
 
+def get_valid_data_loader(valid_dataset_path: str) -> torch.utils.data.DataLoader:
+    """
+    A function for getting train data loader with the following preprocessing
+    operations:
+        1. Resize the image to 256 pixels
+        2. CenterCrop to 227 x 227 pixels
+        3. Covert to torch.Tensor with shape C x H x W shape
+        4. Subtract the mean activity of pixels from each pixels for each channel
+
+    Parameters
+    ----------
+    valid_dataset_path: str
+        The path where the validation dataset can be found.
+
+    Returns
+    -------
+    A instance of the validation data loader.
+    """
+    preprocess = transforms.Compose(
+        [
+            transforms.Resize(256),
+            transforms.CenterCrop(227),
+            transforms.Lambda(ToTensorNoScaling),
+            transforms.Lambda(SubtractMeanPixelActivity),
+        ]
+    )
+
+    validset = torchvision.datasets.ImageNet(
+        root=valid_dataset_path, split="val", transform=preprocess
+    )
+    logging.debug("Validation Dataset created")
+
+    valid_loader = torch.utils.data.DataLoader(
+        validset,
+        shuffle=False,
+        num_workers=2,
+        drop_last=True,
+        batch_size=256,
+        persistent_workers=True,
+    )
+    logging.debug("Validation Dataloader created")
+
+    return valid_loader
+
+
 if __name__ == "__main__":
 
-    train_dataset_path = "/home/sree/data/ILSVRC2012"
+    dataset_path = "/home/sree/data/ILSVRC2012"
     compute_mean_activity = False
 
     if compute_mean_activity is True:
-        mean_pixels = compute_mean_pixels(train_dataset_path)
+        mean_pixels = compute_mean_pixels(dataset_path)
 
         # assign the global variable defined at the top
         mean_activity_of_pixels = mean_pixels
         np.save("mean_activity_of_pixels.npy", mean_activity_of_pixels.numpy())
     else:
         mean_activity_of_pixels = torch.Tensor(
-            np.float32(np.load('/home/sree/github/llm-gym/foundations/2012_alexnet/mean_activity_of_pixels.npy'))
+            np.float32(
+                np.load(
+                    "/home/sree/github/llm-gym/foundations/2012_alexnet/mean_activity_of_pixels.npy"
+                )
+            )
         )
-        logging.debug(f"Shape of the mean activity of pixels loaded is {mean_activity_of_pixels.shape}")
+        logging.debug(
+            f"Shape of the mean activity of pixels loaded is {mean_activity_of_pixels.shape}"
+        )
 
-    train_data_loader = get_train_data_loader(train_dataset_path)
+    train_data_loader = get_train_data_loader(dataset_path)
+    valid_data_loader = get_valid_data_loader(dataset_path)
 
-    dataiter = iter(train_data_loader)
+    dataiter = iter(valid_data_loader)
     images, labels = next(dataiter)
-
-
-    
