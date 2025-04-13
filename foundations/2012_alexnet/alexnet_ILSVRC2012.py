@@ -7,6 +7,8 @@ import torch.optim as optim
 import torchvision
 import torchvision.transforms as transforms
 from tqdm import tqdm
+from timeit import default_timer as timer
+
 
 mean_activity_of_pixels = None
 
@@ -56,6 +58,25 @@ class AlexNet(nn.Module):
         nn.init.constant_(self.model[10].bias, 1)
         nn.init.constant_(self.model[12].bias, 1)
 
+    def forward(self, x):
+        """
+        Forward pass of the model.
+        Parameters
+        ----------
+        x: torch.Tensor
+            The input image as torch tensor in C x H x W shape.
+        Returns
+        -------
+        -------
+        torch.Tensor
+            The output of the model as torch tensor in C x H x W shape.
+        """
+        x = self.model(x)
+        # reduce the dimensions for linear layer input
+        x = x.view(-1, 256 * 6 * 6)
+        x = self.classifier(x)
+        return x
+
 
 def SubtractMeanPixelActivity(x: torch.Tensor):
     """
@@ -66,6 +87,11 @@ def SubtractMeanPixelActivity(x: torch.Tensor):
     ----------
     x: torch.Tensor
         An input image as torch tensor in C x H x W shape.
+    Returns
+    -------
+    -------
+    torch.Tensor
+        The output image as torch tensor in C x H x W shape.
     """
     return x - mean_activity_of_pixels
 
@@ -83,7 +109,9 @@ def ToTensorNoScaling(x: np.array) -> torch.Tensor:
 
     Returns
     -------
-    Corresponding torch tensor in C x H x W shape
+    -------
+    torch.Tensor
+        The output image as torch tensor in C x H x W shape.
     """
 
     return torch.from_numpy(np.array(x).transpose(2, 0, 1))
@@ -109,8 +137,9 @@ def compute_mean_pixels(train_dataset_path: str) -> np.array:
 
     Returns
     -------
-    Mean activity of pixels in the tranining dataset in C x H x W shape.
-
+    -------
+    np.array
+        The mean activity of pixels in the tranining dataset in C x H x W shape.
     """
     preprocess = transforms.Compose(
         [
@@ -162,7 +191,9 @@ def get_train_data_loader(train_dataset_path: str) -> torch.utils.data.DataLoade
 
     Returns
     -------
-    A instance of the train data loader.
+    -------
+    torch.utils.data.DataLoader
+        The data loader for the training dataset.
     """
     preprocess = transforms.Compose(
         [
@@ -235,6 +266,34 @@ def get_valid_data_loader(valid_dataset_path: str) -> torch.utils.data.DataLoade
 
     return valid_loader
 
+def train_one_epoch(epoch_number: int, train_data_loader: torch.utils.data.DataLoader, model: nn.Module, optimizer: optim.Optimizer, loss: nn.Module, device: torch.device):
+    """
+    A function for training the model for one epoch.
+    """
+    model.train()
+
+    for batch_number, (images, labels) in tqdm(
+        enumerate(train_data_loader), desc="Training"
+    ):
+        images = images.to(device)
+        labels = labels.to(device)
+
+        outputs = model(images)
+        loss_value = loss(outputs, labels)
+
+        optimizer.zero_grad()
+        loss_value.backward()
+        optimizer.step()
+
+        if batch_number > 10:
+            break
+
+def validate_one_epoch():
+    """
+    A function for validating the model for one epoch.
+    """
+    pass
+
 
 if __name__ == "__main__":
     logging.basicConfig(filename="myapp.log", level=logging.INFO)
@@ -279,3 +338,23 @@ if __name__ == "__main__":
 
     loss = torch.nn.CrossEntropyLoss()
     logging.debug("Cross entropy loss function created")
+
+    # Training loop
+    num_epochs = 90
+    logging.debug(f"Starting training for {num_epochs} epochs")
+    training_start_time = timer()
+    for epoch in range(num_epochs):
+        logging.debug(f"Epoch {epoch + 1}/{num_epochs}")
+        train_one_epoch(
+            epoch_number=epoch,
+            train_data_loader=train_data_loader,
+            model=alexnet,
+            optimizer=optimizer,
+            loss=loss,
+            device=device,
+        )
+
+    training_end_time = timer()
+    logging.debug(
+        f"Training completed in {training_end_time - training_start_time:.2f} seconds"
+    )
