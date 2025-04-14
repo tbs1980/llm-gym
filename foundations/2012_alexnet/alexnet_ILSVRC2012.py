@@ -270,6 +270,11 @@ def train_one_epoch(epoch_number: int, train_data_loader: torch.utils.data.DataL
     """
     A function for training the model for one epoch.
     """
+
+    avg_loss = 0
+    avg_top1_err = 0
+    avg_top5_err = 0
+
     model.train()
 
     for batch_number, (images, labels) in tqdm(
@@ -280,6 +285,13 @@ def train_one_epoch(epoch_number: int, train_data_loader: torch.utils.data.DataL
 
         outputs = model(images)
         loss_value = loss(outputs, labels)
+        avg_loss += loss_value.item()
+
+        _, top5_preds = outputs.topk(5, dim=1, largest=True, sorted=True)
+        top1_err = torch.sum(top5_preds[:, 0] != labels).item() / labels.shape[0]
+        top5_err = torch.sum(top5_preds[:, 1:] != labels.unsqueeze(1)).item() / labels.shape[0]
+        avg_top1_err += top1_err
+        avg_top5_err += top5_err
 
         optimizer.zero_grad()
         loss_value.backward()
@@ -287,6 +299,13 @@ def train_one_epoch(epoch_number: int, train_data_loader: torch.utils.data.DataL
 
         if batch_number > 10:
             break
+    
+    avg_loss /= len(train_data_loader)
+    avg_top1_err /= len(train_data_loader)
+    avg_top5_err /= len(train_data_loader)
+
+    return avg_loss, avg_top1_err, avg_top5_err
+
 
 def validate_one_epoch():
     """
@@ -345,7 +364,7 @@ if __name__ == "__main__":
     training_start_time = timer()
     for epoch in range(num_epochs):
         logging.debug(f"Epoch {epoch + 1}/{num_epochs}")
-        train_one_epoch(
+        avg_loss, avg_top1_err, avg_top5_err = train_one_epoch(
             epoch_number=epoch,
             train_data_loader=train_data_loader,
             model=alexnet,
@@ -353,6 +372,10 @@ if __name__ == "__main__":
             loss=loss,
             device=device,
         )
+
+        print("Avegerage loss: ", avg_loss)
+        print("Average top1 error: ", avg_top1_err)
+        print("Average top5 error: ", avg_top5_err)
 
     training_end_time = timer()
     logging.debug(
