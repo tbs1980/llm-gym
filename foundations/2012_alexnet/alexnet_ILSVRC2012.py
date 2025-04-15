@@ -288,8 +288,12 @@ def train_one_epoch(epoch_number: int, train_data_loader: torch.utils.data.DataL
         avg_loss += loss_value.item()
 
         _, top5_preds = outputs.topk(5, dim=1, largest=True, sorted=True)
-        top1_err = torch.sum(top5_preds[:, 0] != labels).item() / labels.shape[0]
-        top5_err = torch.sum(top5_preds[:, 1:] != labels.unsqueeze(1)).item() / labels.shape[0]
+
+        correct_top1 = top5_preds[:, 0] == labels
+        correct_top5 = top5_preds.eq(labels.view(-1, 1)).any(dim=1)
+        top1_err = 1 - correct_top1.float().mean().item()
+        top5_err = 1 - correct_top5.float().mean().item()
+
         avg_top1_err += top1_err
         avg_top5_err += top5_err
 
@@ -373,9 +377,11 @@ if __name__ == "__main__":
             device=device,
         )
 
-        print("Avegerage loss: ", avg_loss)
-        print("Average top1 error: ", avg_top1_err)
-        print("Average top5 error: ", avg_top5_err)
+        # print("Avegerage loss: ", avg_loss)
+        # print("Average top1 error: ", avg_top1_err)
+        # print("Average top5 error: ", avg_top5_err)
+
+        break
 
     training_end_time = timer()
     logging.debug(
