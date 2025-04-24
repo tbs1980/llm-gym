@@ -311,12 +311,48 @@ def train_one_epoch(epoch_number: int, train_data_loader: torch.utils.data.DataL
     return avg_loss, avg_top1_err, avg_top5_err
 
 
-def validate_one_epoch():
+def validate_one_epoch(epoch_number: int, valid_data_loader: torch.utils.data.DataLoader, model: nn.Module, loss: nn.Module, device: torch.device):
     """
     A function for validating the model for one epoch.
     """
-    pass
 
+    avg_loss = 0
+    avg_top1_err = 0
+    avg_top5_err = 0
+
+    model.eval()
+
+    with torch.no_grad():
+        for batch_number, (images, labels) in tqdm(
+            enumerate(valid_data_loader), desc="Validation"
+        ):
+            images = [image.to(device) for image in images]
+            images = torch.stack(images)
+            labels = labels.to(device)
+
+            outputs = model(images)
+            loss_value = loss(outputs, labels)
+            avg_loss += loss_value.item()
+
+            _, top5_preds = outputs.topk(5, dim=1, largest=True, sorted=True)
+
+            correct_top1 = top5_preds[:, 0] == labels
+            correct_top5 = top5_preds.eq(labels.view(-1, 1)).any(dim=1)
+            top1_err = 1 - correct_top1.float().mean().item()
+            top5_err = 1 - correct_top5.float().mean().item()
+
+            avg_top1_err += top1_err
+            avg_top5_err += top5_err
+
+            if batch_number > 10:
+                break
+            
+    avg_loss /= len(valid_data_loader)
+    avg_top1_err /= len(valid_data_loader)
+    avg_top5_err /= len(valid_data_loader)
+
+    return avg_loss, avg_top1_err, avg_top5_err
+    
 
 if __name__ == "__main__":
     logging.basicConfig(filename="myapp.log", level=logging.INFO)
@@ -368,7 +404,7 @@ if __name__ == "__main__":
     training_start_time = timer()
     for epoch in range(num_epochs):
         logging.debug(f"Epoch {epoch + 1}/{num_epochs}")
-        avg_loss, avg_top1_err, avg_top5_err = train_one_epoch(
+        train_avg_loss, train_avg_top1_err, train_avg_top5_err = train_one_epoch(
             epoch_number=epoch,
             train_data_loader=train_data_loader,
             model=alexnet,
@@ -380,6 +416,18 @@ if __name__ == "__main__":
         # print("Avegerage loss: ", avg_loss)
         # print("Average top1 error: ", avg_top1_err)
         # print("Average top5 error: ", avg_top5_err)
+
+        val_avg_loss, val_avg_top1_err, val_avg_top5_err = validate_one_epoch(
+            epoch_number=epoch,
+            valid_data_loader=valid_data_loader,
+            model=alexnet,
+            loss=loss,
+            device=device,
+        )
+
+        print("Avegerage val loss: ", val_avg_loss)
+        print("Average val top1 error: ", val_avg_top1_err)
+        print("Average val top5 error: ", val_avg_top5_err)
 
         break
 
